@@ -14,7 +14,7 @@ def enter_data():
   lastname = last_name_entry.get()
 
   if firstname and lastname:
-    title = title_combobox.get()
+    title = gender_combobox.get()
     age = age_spinbox.get()
     dni = dni_entry.get()
 
@@ -28,88 +28,53 @@ def enter_data():
 
 window = tkinter.Tk()
 window.title("Alta de paciente")
-
-frame = tkinter.Frame(window)
+window.configure(bg="#457B9D")
+frame = tkinter.Frame(window, background="#457B9D")
 frame.pack()
-
 # Saving User Info
-user_info_frame = tkinter.LabelFrame(frame, text="Informacion de paciente")
+user_info_frame = tkinter.LabelFrame(frame, text="Informacion de paciente", background="#457B9D")
 user_info_frame.grid(row=0, column=0, padx=20, pady=10)
+user_info_frame.configure()
 
-first_name_label = tkinter.Label(user_info_frame, text="Nombre")
+first_name_label = tkinter.Label(user_info_frame, text="Nombre", background="#457B9D")
 first_name_label.grid(row=0, column=0)
-last_name_label = tkinter.Label(user_info_frame, text="Apellido")
+
+first_name_entry = tkinter.Entry(user_info_frame, background="#F1FAEE")
+first_name_entry.grid(row=1, column=0)
+
+last_name_label = tkinter.Label(user_info_frame, text="Apellido", background="#457B9D")
 last_name_label.grid(row=0, column=1)
 
-first_name_entry = tkinter.Entry(user_info_frame)
-last_name_entry = tkinter.Entry(user_info_frame)
-first_name_entry.grid(row=1, column=0)
+
+last_name_entry = tkinter.Entry(user_info_frame, background="#F1FAEE")
 last_name_entry.grid(row=1, column=1)
 
-title_label = tkinter.Label(user_info_frame, text="Genero")
-title_combobox = ttk.Combobox(user_info_frame, values=["", "M", "F", "X"])
-title_label.grid(row=0, column=2)
-title_combobox.grid(row=1, column=2)
 
-age_label = tkinter.Label(user_info_frame, text="Edad")
-age_spinbox = tkinter.Spinbox(user_info_frame, from_=18, to=110)
+gender_label = tkinter.Label(user_info_frame, text="Genero", background="#457B9D")
+gender_combobox = ttk.Combobox(user_info_frame, values=["", "M", "F", "X"])
+gender_label.grid(row=0, column=2)
+gender_combobox.grid(row=1, column=2)
+
+age_label = tkinter.Label(user_info_frame, text="Edad", background="#457B9D")
+age_spinbox = tkinter.Spinbox(user_info_frame, from_=18, to=110, background="#F1FAEE")
 age_label.grid(row=2, column=0)
 age_spinbox.grid(row=3, column=0)
 
-dni_label = tkinter.Label(user_info_frame, text="DNI")
-dni_entry = tkinter.Entry(user_info_frame)
+dni_label = tkinter.Label(user_info_frame, text="DNI", background="#457B9D")
+dni_entry = tkinter.Entry(user_info_frame, background="#F1FAEE")
 dni_label.grid(row=2, column=1)
 dni_entry.grid(row=3, column=1)
 
-description_frame = tkinter.LabelFrame(frame)
+description_frame = tkinter.LabelFrame(frame, background="#457B9D")
 description_frame.grid(row=1, column=0, sticky="news", padx=20, pady=10)
 
-symptoms_label = tkinter.Label(description_frame, text="Sintomas")
-symptoms_entry = tkinter.Entry(description_frame, width=67)
+symptoms_label = tkinter.Label(description_frame, text="Sintomas", background="#457B9D")
+symptoms_entry = tkinter.Entry(description_frame, width=67, background="#F1FAEE")
 symptoms_label.grid(row=4, column=1)
 symptoms_entry.grid(row=5, column=1)
 
-"""
-for widget in user_info_frame.winfo_children():
-  widget.grid_configure(padx=10, pady=5)
-
-# Saving Course Info
-courses_frame = tkinter.LabelFrame(frame)
-courses_frame.grid(row=1, column=0, sticky="news", padx=20, pady=10)
-
-registered_label = tkinter.Label(courses_frame, text="Registration Status")
-
-reg_status_var = tkinter.StringVar(value="Not Registered")
-registered_check = tkinter.Checkbutton(courses_frame, text="Currently Registered",
-                                       variable=reg_status_var, onvalue="Registered", offvalue="Not registered")
-
-registered_label.grid(row=0, column=0)
-registered_check.grid(row=1, column=0)
-
-numcourses_label = tkinter.Label(courses_frame, text= "# Completed Courses")
-numcourses_spinbox = tkinter.Spinbox(courses_frame, from_=0, to='infinity')
-numcourses_label.grid(row=0, column=1)
-numcourses_spinbox.grid(row=1, column=1)
-
-numsemesters_label = tkinter.Label(courses_frame, text="# Semesters")
-numsemesters_spinbox = tkinter.Spinbox(courses_frame, from_=0, to="infinity")
-numsemesters_label.grid(row=0, column=2)
-numsemesters_spinbox.grid(row=1, column=2)
-
-for widget in courses_frame.winfo_children():
-  widget.grid_configure(padx=10, pady=5)
-
-# Accept terms
-terms_frame = tkinter.LabelFrame(frame, text="Terms & Conditions")
-terms_frame.grid(row=2, column=0, sticky="news", padx=20, pady=10)
-
-accept_var = tkinter.StringVar(value="Not Accepted")
-terms_check = tkinter.Checkbutton(terms_frame, text= "I accept the terms and conditions.",
-                                  variable=accept_var, onvalue="Accepted", offvalue="Not Accepted")
-terms_check.grid(row=0, column=0)
-"""
 # Button
-button = tkinter.Button(frame, text="Ingresar Paciente", command=enter_data)
+button = tkinter.Button(frame, text="Ingresar Paciente", command=enter_data, background="#A8DADC")
 button.grid(row=3, column=0, sticky="news", padx=20, pady=10)
 
 window.mainloop()
