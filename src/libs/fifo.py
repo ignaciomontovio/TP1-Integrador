@@ -13,7 +13,13 @@ def make_fifo(filename=FIFO_FILENAME, mode=0o600):
 
 
 def open_fifo(mode, filename=FIFO_FILENAME):
-    return open(filename, mode)
+    try:
+        fifo = open(filename, mode, buffering=0)
+    except IOError as err:
+        print(f"[Fifo::Error] - {err}", file=sys.stderr)
+        fifo = None
+
+    return fifo
 
 
 def remove_fifo(filename=FIFO_FILENAME):

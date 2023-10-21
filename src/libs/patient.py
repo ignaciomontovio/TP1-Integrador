@@ -1,4 +1,4 @@
-import pickle
+import pickle, sys
 
 
 class Patient:
@@ -32,4 +32,10 @@ def serialize(fifo, patient):
 
 
 def deserialize(fifo) -> Patient:
-    return pickle.load(fifo)
+    try:
+        patient = pickle.load(fifo)
+    except EOFError as err:
+        print(f"[Patient::Error] - {err}", file=sys.stderr)
+        patient = None
+
+    return patient

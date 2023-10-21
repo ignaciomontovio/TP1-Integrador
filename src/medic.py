@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import libs.fifo as lf
 import libs.patient as lp
+from threading import Thread
 
 
 class Theme:
@@ -26,13 +27,25 @@ class App(tk.Tk):
         super().__init__()
 
         self.fifo = lf.open_fifo("rb")
-        self.patient = lp.Patient()
-        self.str_patitentTitle = tk.StringVar(value="Paciente N°XYZ")
-
+        self.str_patitentTitle = tk.StringVar()
         self.draw()
-        self.set_patient_description()
+
+        if self.fifo is None:
+            self.str_patitentTitle.set("Error!")
+            self.patientDesc.insert(
+                tk.END, "No se ha podido comunicar con la recepción..."
+            )
+            self.nextButton["state"] = tk.DISABLED
+            self.patientDesc["state"] = tk.DISABLED
+        else:
+            self.str_patitentTitle.set("Bienvenido!")
+            self.patientDesc.insert(
+                tk.END, "Presione el boton de abajo para llamar a un paciente."
+            )
 
         self.bind("<Escape>", lambda e: self.destroy())
+        self.bind("<<New Patient>>", self.update_patient)
+        self.bind("<<Inform Patient>>", self.notify_patient)
 
     def draw(self):
         self.geometry(f"{App.SCREEN_WIDTH}x{App.SCREEN_HEIGHT}")
@@ -50,7 +63,11 @@ class App(tk.Tk):
         )
         self.style.map(
             "TButton",
-            background=[("pressed", Theme.BORDER_BG_P), ("active", Theme.BORDER_BG_A)],
+            background=[
+                ("pressed", Theme.BORDER_BG_P),
+                ("active", Theme.BORDER_BG_A),
+                ("disabled", Theme.BORDER_BG_P),
+            ],
         )
 
         mainFrame = ttk.Frame(
@@ -103,10 +120,10 @@ class App(tk.Tk):
 
         scrollbar.config(command=self.patientDesc.yview)
 
-        nextButton = ttk.Button(
-            subFrame, text="Siguiente Turno", command=self.update_patient
+        self.nextButton = ttk.Button(
+            subFrame, text="Siguiente Turno", command=self.request_patient
         )
-        nextButton.pack(
+        self.nextButton.pack(
             expand=True,
             anchor="se",
             padx=App.BORDER_WIDTH,
@@ -129,11 +146,33 @@ class App(tk.Tk):
         self.patientDesc.insert(tk.END, f"\n\nSintomas:\n", "italic")
         self.patientDesc.insert(tk.END, f"{self.patient.symptoms}")
 
-    def update_patient(self):
-        self.patient = lp.deserialize(self.fifo)
-        self.str_patitentTitle.set(f"Paciente N°{self.patient.nro}")
+    def request_patient(self):
+        self.str_patitentTitle.set("Esperando pacientes...")
         self.patientDesc.delete("1.0", tk.END)
-        self.set_patient_description()
+        self.nextButton["state"] = tk.DISABLED
+        Thread(target=self.wait_patient, args=(), daemon=True).start()
+
+    def update_patient(self, event):
+        if self.patient is None:
+            self.str_patitentTitle.set("Error!")
+            self.patientDesc.insert(
+                tk.END, "No se ha podido comunicar con la recepción..."
+            )
+            self.nextButton["state"] = tk.DISABLED
+            self.patientDesc["state"] = tk.DISABLED
+        else:
+            self.str_patitentTitle.set(f"Paciente N°{self.patient.nro}")
+            self.set_patient_description()
+            self.nextButton["state"] = tk.NORMAL
+            self.event_generate("<<Inform Patient>>")
+
+    def wait_patient(self):
+        self.patient = lp.deserialize(self.fifo)
+        self.event_generate("<<New Patient>>")
+
+    def notify_patient(self, event):
+        print("[TODO] - Informar a la pantalla de turnos")
+        pass
 
 
 if __name__ == "__main__":

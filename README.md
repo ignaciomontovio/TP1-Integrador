@@ -17,6 +17,6 @@ Al ser un sistema con tres procesos **(recepción, médico y pantalla de turnos)
 
 ## Galeria:
 <p align="center">
-    <img src="./docs/interfaz_medico.png" alt="interfaz medico">
+    <img height=600 src="./docs/interfaz_medico.png" alt="interfaz medico">
     <h3 align="center"><b><i>Interfaz del Medico</i></b></h3>
 </p>
