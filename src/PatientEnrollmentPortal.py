@@ -1,49 +1,28 @@
 import tkinter
 from tkinter import ttk
 from tkinter import messagebox
-import sys
 import os
-import pickle
+import libs.fifo as lf
+import libs.patient as lp
 
-
-class Patient:
-  nombre = ""
-  apellido = ""
-  dni = 0
-  genero = ""
-  edad = 0
-  sintomas = ""
-
-  def __init__(self, nombre, apellido, dni, genero, edad, sintomas):
-    self.nombre = nombre
-    self.apellido = apellido
-    self.dni = dni
-    self.genero = genero
-    self.edad = edad
-    self.sintomas = sintomas
+lf.make_fifo()
+fifo = lf.open_fifo("wb")
 
 def enter_data():
-  # User info
   firstname = first_name_entry.get()
   lastname = last_name_entry.get()
 
   if firstname and lastname:
-    patient = Patient(first_name_entry.get(), last_name_entry.get(),
-                      dni_entry.get(), gender_combobox.get(), age_spinbox.get(),
-                      symptoms_entry.get())
-    patientSerialized = pickle.dumps(patient)
-    """
-    try:
-      os.mkfifo("./fifo", 0o600)
+    patient = lp.Patient(nro=1,
+                         name=first_name_entry.get(),
+                         surname=last_name_entry.get(),
+                         dni=dni_entry.get(),
+                         age=age_spinbox.get(),
+                         sex=sex_combobox.get(),
+                         symptoms=symptoms_entry.get())
 
-    except OSError as err:
-      print(f"Error al crear fifo {err}")
-      sys.exit(1)
+    os.write(fifo, patient.serialize(fifo))
 
-    fifo = os.open("./fifo", os.O_WRONLY)
-
-    os.write(fifo, patientSerialized)
-    """
   else:
     tkinter.messagebox.showwarning(title="Error",
                                    message="First name and last name are required.")
@@ -84,15 +63,14 @@ combostyle.theme_create('combostyle', parent='alt',
                               'background': '#F1FAEE'
                             }}}
                         )
-# ATTENTION: this applies the new style 'combostyle' to all ttk.Combobox
 combostyle.theme_use('combostyle')
 
 
-gender_label = tkinter.Label(user_info_frame, text="Genero",
-                             background="#457B9D")
-gender_combobox = ttk.Combobox(user_info_frame, values=["", "M", "F", "X"], )
-gender_label.grid(row=0, column=2)
-gender_combobox.grid(row=1, column=2)
+sex_label = tkinter.Label(user_info_frame, text="Genero",
+                          background="#457B9D")
+sex_combobox = ttk.Combobox(user_info_frame, values=["", "M", "F", "X"], )
+sex_label.grid(row=0, column=2)
+sex_combobox.grid(row=1, column=2)
 
 age_label = tkinter.Label(user_info_frame, text="Edad", background="#457B9D")
 age_spinbox = tkinter.Spinbox(user_info_frame, from_=0, to=110,
