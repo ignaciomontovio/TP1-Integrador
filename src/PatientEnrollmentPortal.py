@@ -1,3 +1,4 @@
+import sys
 import tkinter
 from tkinter import ttk
 from tkinter import messagebox
@@ -5,8 +6,15 @@ import os
 import libs.fifo as lf
 import libs.patient as lp
 
+#lf.delete_fifo()
 lf.make_fifo()
 fifo = lf.open_fifo("wb")
+
+def finish_session():
+  lf.remove_fifo()
+  window.quit()
+  sys.exit()
+
 
 def enter_data():
   firstname = first_name_entry.get()
@@ -20,9 +28,9 @@ def enter_data():
                          age=age_spinbox.get(),
                          sex=sex_combobox.get(),
                          symptoms=symptoms_entry.get())
-
+    tkinter.messagebox.showinfo(title="Aceptado",
+                                   message="Paciente agregado correctamente a la cola.")
     os.write(fifo, patient.serialize(fifo))
-
   else:
     tkinter.messagebox.showwarning(title="Error",
                                    message="First name and last name are required.")
@@ -93,9 +101,14 @@ symptoms_entry = tkinter.Entry(description_frame, width=67,
 symptoms_label.grid(row=4, column=1)
 symptoms_entry.grid(row=5, column=1)
 
-# Button
-button = tkinter.Button(frame, text="Ingresar Paciente", command=enter_data,
-                        background="#A8DADC")
-button.grid(row=3, column=0, sticky="news", padx=20, pady=10)
+# Button send
+buttonSend = tkinter.Button(frame, text="Ingresar Paciente", command=enter_data,
+                            background="#90BE6D")
+buttonSend.grid(row=3, column=0, sticky="news", padx=20, pady=10)
+
+# Button exit
+buttonExit = tkinter.Button(frame, text="Finalizar session", command=finish_session,
+                            background="#E63946")
+buttonExit.grid(row=4, column=0, sticky="news", padx=20, pady=10)
 
 window.mainloop()
