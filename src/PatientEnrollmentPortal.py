@@ -1,4 +1,6 @@
+import asyncio
 import sys
+import threading
 import tkinter
 from tkinter import ttk
 from tkinter import messagebox
@@ -15,7 +17,9 @@ def finish_session():
   window.quit()
   sys.exit()
 
-
+def show_message():
+  tkinter.messagebox.showinfo(title="Aceptado",
+                              message="Paciente agregado correctamente a la cola.")
 def enter_data():
   firstname = first_name_entry.get()
   lastname = last_name_entry.get()
@@ -28,8 +32,7 @@ def enter_data():
                          age=age_spinbox.get(),
                          sex=sex_combobox.get(),
                          symptoms=symptoms_entry.get())
-    tkinter.messagebox.showinfo(title="Aceptado",
-                                   message="Paciente agregado correctamente a la cola.")
+    threading.Thread(target=show_message).start()
     os.write(fifo, patient.serialize(fifo))
   else:
     tkinter.messagebox.showwarning(title="Error",
