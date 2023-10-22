@@ -1,117 +1,95 @@
-import asyncio
-import sys
+import tkinter as tk
+from tkinter import ttk, messagebox
 import threading
-import tkinter
-from tkinter import ttk
-from tkinter import messagebox
 import os
 import libs.fifo as lf
 import libs.patient as lp
 
-#lf.delete_fifo()
-lf.make_fifo()
-fifo = lf.open_fifo("wb")
+class PatientEntryApp:
+  def __init__(self, root):
+    self.root = root
+    root.title("Alta de paciente")
+    root.configure(bg="#457B9D")
 
-def finish_session():
-  lf.remove_fifo()
-  window.quit()
-  sys.exit()
+    # Creación de FIFO
+    lf.make_fifo()
+    self.fifo = lf.open_fifo("wb")
 
-def show_message():
-  tkinter.messagebox.showinfo(title="Aceptado",
-                              message="Paciente agregado correctamente a la cola.")
-def enter_data():
-  firstname = first_name_entry.get()
-  lastname = last_name_entry.get()
+    self.create_widgets()
 
-  if firstname and lastname:
-    patient = lp.Patient(nro=1,
-                         name=first_name_entry.get(),
-                         surname=last_name_entry.get(),
-                         dni=dni_entry.get(),
-                         age=age_spinbox.get(),
-                         sex=sex_combobox.get(),
-                         symptoms=symptoms_entry.get())
-    threading.Thread(target=show_message).start()
-    os.write(fifo, patient.serialize(fifo))
-  else:
-    tkinter.messagebox.showwarning(title="Error",
-                                   message="First name and last name are required.")
+  def create_widgets(self):
+    frame = tk.Frame(self.root, background="#457B9D")
+    frame.pack()
 
+    user_info_frame = tk.LabelFrame(frame, text="Información del paciente", background="#457B9D")
+    user_info_frame.grid(row=0, column=0, padx=20, pady=10)
 
-window = tkinter.Tk()
-window.title("Alta de paciente")
-window.configure(bg="#457B9D")
-frame = tkinter.Frame(window, background="#457B9D")
-frame.pack()
-# Saving User Info
-user_info_frame = tkinter.LabelFrame(frame, text="Informacion de paciente",
-                                     background="#457B9D")
-user_info_frame.grid(row=0, column=0, padx=20, pady=10)
-user_info_frame.configure()
+    self.first_name_label = tk.Label(user_info_frame, text="Nombre", background="#457B9D")
+    self.first_name_label.grid(row=0, column=0)
+    self.first_name_entry = tk.Entry(user_info_frame, background="#F1FAEE")
+    self.first_name_entry.grid(row=1, column=0)
 
-first_name_label = tkinter.Label(user_info_frame, text="Nombre",
-                                 background="#457B9D")
-first_name_label.grid(row=0, column=0)
+    self.last_name_label = tk.Label(user_info_frame, text="Apellido", background="#457B9D")
+    self.last_name_label.grid(row=0, column=1)
+    self.last_name_entry = tk.Entry(user_info_frame, background="#F1FAEE")
+    self.last_name_entry.grid(row=1, column=1)
 
-first_name_entry = tkinter.Entry(user_info_frame, background="#F1FAEE")
-first_name_entry.grid(row=1, column=0)
+    self.combostyle = ttk.Style()
+    self.combostyle.theme_create('combostyle', parent='alt', settings={'TCombobox':
+                                                                         {'configure': {'fieldbackground': '#F1FAEE', 'background': '#F1FAEE'}}})
+    self.combostyle.theme_use('combostyle')
 
-last_name_label = tkinter.Label(user_info_frame, text="Apellido",
-                                background="#457B9D")
-last_name_label.grid(row=0, column=1)
+    self.sex_label = tk.Label(user_info_frame, text="Género", background="#457B9D")
+    self.sex_combobox = ttk.Combobox(user_info_frame, values=["", "M", "F", "X"])
+    self.sex_label.grid(row=0, column=2)
+    self.sex_combobox.grid(row=1, column=2)
 
-last_name_entry = tkinter.Entry(user_info_frame, background="#F1FAEE")
-last_name_entry.grid(row=1, column=1)
+    self.age_label = tk.Label(user_info_frame, text="Edad", background="#457B9D")
+    self.age_spinbox = tk.Spinbox(user_info_frame, from_=0, to=110, background="#F1FAEE")
+    self.age_label.grid(row=2, column=0)
+    self.age_spinbox.grid(row=3, column=0)
 
-combostyle = ttk.Style()
+    self.dni_label = tk.Label(user_info_frame, text="DNI", background="#457B9D")
+    self.dni_entry = tk.Entry(user_info_frame, background="#F1FAEE")
+    self.dni_label.grid(row=2, column=1)
+    self.dni_entry.grid(row=3, column=1)
 
-combostyle.theme_create('combostyle', parent='alt',
-                        settings={'TCombobox':
-                          {'configure':
-                            {
-                              'fieldbackground': '#F1FAEE',
-                              'background': '#F1FAEE'
-                            }}}
-                        )
-combostyle.theme_use('combostyle')
+    description_frame = tk.LabelFrame(frame, background="#457B9D")
+    description_frame.grid(row=1, column=0, sticky="news", padx=20, pady=10)
 
+    self.symptoms_label = tk.Label(description_frame, text="Síntomas", background="#457B9D")
+    self.symptoms_entry = tk.Entry(description_frame, width=67, background="#F1FAEE")
+    self.symptoms_label.grid(row=4, column=1)
+    self.symptoms_entry.grid(row=5, column=1)
 
-sex_label = tkinter.Label(user_info_frame, text="Genero",
-                          background="#457B9D")
-sex_combobox = ttk.Combobox(user_info_frame, values=["", "M", "F", "X"], )
-sex_label.grid(row=0, column=2)
-sex_combobox.grid(row=1, column=2)
+    button_send = tk.Button(frame, text="Ingresar Paciente", command=self.enter_data, background="#90BE6D")
+    button_send.grid(row=3, column=0, sticky="news", padx=20, pady=10)
 
-age_label = tkinter.Label(user_info_frame, text="Edad", background="#457B9D")
-age_spinbox = tkinter.Spinbox(user_info_frame, from_=0, to=110,
-                              background="#F1FAEE")
-age_label.grid(row=2, column=0)
-age_spinbox.grid(row=3, column=0)
+    button_exit = tk.Button(frame, text="Finalizar sesión", command=self.finish_session, background="#E63946")
+    button_exit.grid(row=4, column=0, sticky="news", padx=20, pady=10)
 
-dni_label = tkinter.Label(user_info_frame, text="DNI", background="#457B9D")
-dni_entry = tkinter.Entry(user_info_frame, background="#F1FAEE")
-dni_label.grid(row=2, column=1)
-dni_entry.grid(row=3, column=1)
+  def finish_session(self):
+    lf.remove_fifo()
+    self.root.quit()
+    os._exit(0)
 
-description_frame = tkinter.LabelFrame(frame, background="#457B9D")
-description_frame.grid(row=1, column=0, sticky="news", padx=20, pady=10)
+  def show_message(self):
+    messagebox.showinfo(title="Aceptado", message="Paciente agregado correctamente a la cola.")
 
-symptoms_label = tkinter.Label(description_frame, text="Sintomas",
-                               background="#457B9D")
-symptoms_entry = tkinter.Entry(description_frame, width=67,
-                               background="#F1FAEE")
-symptoms_label.grid(row=4, column=1)
-symptoms_entry.grid(row=5, column=1)
+  def enter_data(self):
+    firstname = self.first_name_entry.get()
+    lastname = self.last_name_entry.get()
 
-# Button send
-buttonSend = tkinter.Button(frame, text="Ingresar Paciente", command=enter_data,
-                            background="#90BE6D")
-buttonSend.grid(row=3, column=0, sticky="news", padx=20, pady=10)
+    if firstname and lastname:
+      patient = lp.Patient(nro=1, name=firstname, surname=lastname, dni=self.dni_entry.get(),
+                           age=self.age_spinbox.get(), sex=self.sex_combobox.get(),
+                           symptoms=self.symptoms_entry.get())
+      threading.Thread(target=self.show_message).start()
+      os.write(self.fifo, patient.serialize(self.fifo))
+    else:
+      messagebox.showwarning(title="Error", message="Se requieren nombre y apellido.")
 
-# Button exit
-buttonExit = tkinter.Button(frame, text="Finalizar session", command=finish_session,
-                            background="#E63946")
-buttonExit.grid(row=4, column=0, sticky="news", padx=20, pady=10)
-
-window.mainloop()
+if __name__ == "__main__":
+  root = tk.Tk()
+  app = PatientEntryApp(root)
+  root.mainloop()
