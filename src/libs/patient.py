@@ -26,14 +26,31 @@ class Patient:
     def serialize(self, fifo):
         pickle.dump(self, fifo)
 
+    def serialize(self) -> bytes:
+        return pickle.dumps(self)
+
 
 def serialize(fifo, patient):
     pickle.dump(patient, fifo)
 
 
+def serialize(patient) -> bytes:
+    return pickle.dumps(patient)
+
+
 def deserialize(fifo) -> Patient:
     try:
         patient = pickle.load(fifo)
+    except EOFError as err:
+        print(f"[Patient::Error] - {err}", file=sys.stderr)
+        patient = None
+
+    return patient
+
+
+def deserialize(raw_bytes: bytes) -> Patient:
+    try:
+        patient = pickle.loads(raw_bytes)
     except EOFError as err:
         print(f"[Patient::Error] - {err}", file=sys.stderr)
         patient = None
