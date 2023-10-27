@@ -70,7 +70,7 @@ class App(tk.Tk):
             mainFrame,
             width=App.SCREEN_HEIGHT - App.BORDER_WIDTH,
             height=App.SCREEN_HEIGHT - App.BORDER_WIDTH,
-            style="Sub.TFrame",
+            style="Light.TFrame",
         )
         subFrame.pack(
             fill="both",
@@ -80,14 +80,12 @@ class App(tk.Tk):
             pady=App.BORDER_WIDTH,
         )
 
-        labelsFrame = ttk.Frame(subFrame, style="Sub.TFrame")
+        labelsFrame = ttk.Frame(subFrame, style="Light.TFrame")
         labelsFrame.pack(fill="both", expand=True, anchor="center")
 
         patientTitle = ttk.Label(
             labelsFrame,
             textvariable=self.str_patitentTitle,
-            background=Theme.BG,
-            foreground=Theme.RED,
             font=(App.FONT_NAME, 22, "bold"),
         )
         patientTitle.pack(anchor="ne", padx=10, pady=10, side=tk.LEFT)
@@ -95,8 +93,6 @@ class App(tk.Tk):
         counterLabel = ttk.Label(
             labelsFrame,
             textvariable=self.str_counterLabel,
-            background=Theme.BG,
-            foreground=Theme.RED,
             font=(App.FONT_NAME, 12, "bold"),
         )
         counterLabel.pack(anchor="nw", padx=10, pady=10, side=tk.RIGHT)
