@@ -17,7 +17,7 @@ class Role(Enum):
 
 class Message:
     def __init__(
-        self, msg_type: MessageType, sender: Role, patient: lp.Patient = None, counter: int = 0
+        self, msg_type: MessageType, sender: Role = None, patient: lp.Patient = None, counter: int = 0
     ):
         self.msg_type = msg_type
         self.sender = sender
