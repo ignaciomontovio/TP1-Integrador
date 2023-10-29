@@ -42,6 +42,7 @@ class App(tk.Tk):
             self.nextButton["state"] = tk.DISABLED
             self.patientDesc["state"] = tk.DISABLED
         else:
+            self.cs.send(lmsg.Message(msg_type=lmsg.MessageType.LOGIN, sender=lmsg.Role.MEDIC).serialize())
             self.str_patitentTitle.set("Bienvenido!")
             self.patientDesc.insert(
                 tk.END, "Presione el boton de abajo para llamar a un paciente."

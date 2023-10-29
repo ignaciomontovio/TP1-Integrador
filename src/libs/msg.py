@@ -8,18 +8,24 @@ class MessageType(Enum):
     COUNTER = 2
     ASK = 3
     GOT = 4
+    LOGIN = 5
+
+class Role(Enum):
+    MEDIC = 1
+    RECEPTION = 2
 
 
 class Message:
     def __init__(
-        self, msg_type: MessageType, patient: lp.Patient = None, counter: int = 0
+        self, msg_type: MessageType, sender: Role, patient: lp.Patient = None, counter: int = 0
     ):
         self.msg_type = msg_type
+        self.sender = sender
         self.patient = patient
         self.counter = counter
 
     def __str__(self):
-        return f"{self.msg_type.name} - {self.patient} - {self.counter}"
+        return f"{self.msg_type.name} {self.sender} - {self.patient} - {self.counter}"
 
     def serialize(self) -> bytes:
         return pickle.dumps(self)
