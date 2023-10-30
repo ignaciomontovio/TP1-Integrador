@@ -6,7 +6,6 @@ from queue import Queue
 import libs.patient as lp
 import libs.msg as lmsg
 
-# import tkinter as tk
 
 TURNOS_IP = "127.0.0.1"
 TURNOS_PORT = 5000
@@ -21,32 +20,26 @@ class Server:
 
         try:
             self.server_socket.bind((TURNOS_IP, TURNOS_PORT))
-        except socket.error as err:
+        except sock.error as err:
             print(f"[Server::Socket::Error] - {err}", file=sys.stderr)
             self.server_socket = None
 
         if self.server_socket is None:
             print("Cerrando el servidor...")
             return
-            # self.str_patitentTitle.set("Error!")
-            # self.patientDesc.insert(
-        #     tk.END, "No se ha podido Inicializar el servidor..."
-        # )
         else:
             self.server_socket.listen()
 
-        #Thread(target=self.run_server, args=(), daemon=True).start()
+        # Thread(target=self.run_server, args=(), daemon=True).start()
         self.run_server()
-
-        # self.bind("<Escape>", self.exit)
-        # self.bind("<<New Patient>>", self.update_patient)
-        # self.bind("<<Inform Patient>>", self.notify_patient)
 
     # Se acepta una conexion nueva y se pasa a ejecutar en un nuevo thread
     def run_server(self):
         while True:
             incoming_connection = self.server_socket.accept()
-            Thread(target=self.login, args=(incoming_connection), daemon=True).start()
+            Thread(
+                target=self.login, args=(incoming_connection), daemon=True
+            ).start()
 
     # El login se encarga de categorizar cualquier conexion entrante y la lleva al flujo de ejecucion correspondiente
     def login(self, client_socket: sock.socket, client_address: sock.AddressInfo):
@@ -56,18 +49,28 @@ class Server:
 
             if msg == None:
                 print(
-                    "[Server::Warning] - Se perdio la conexion con "
-                    + client_address
-                    + " ."
+                    "[Server::Warning] - Se perdio la conexion con ",
+                    client_address,
+                    " .",
                 )
                 client_socket.close()
                 break
 
             if msg.msg_type == lmsg.MessageType.LOGIN:
                 if msg.sender == lmsg.Role.MEDIC:
+                    print(
+                        f"[Server::info] - Nueva conexion desde ",
+                        client_address,
+                        " , tipo: MEDICO",
+                    )
                     self.update_list.append(client_socket)
                     self.medic_conn(client_socket, client_address)
                 else:
+                    print(
+                        f"[Server::info] - Nueva conexion desde ",
+                        client_address,
+                        " , tipo: RECEPCION",
+                    )
                     self.reception_conn(client_socket, client_address)
             else:
                 print("[Server::Login::Warning] - Se recibio un MessageType invalido.")
@@ -82,9 +85,9 @@ class Server:
 
             if msg == None:
                 print(
-                    "[Server::Medic::Warning] - Se perdio la conexion con "
-                    + medic_address
-                    + " ."
+                    "[Server::Medic::Warning] - Se perdio la conexion con ",
+                    medic_address,
+                    " .",
                 )
                 self.update_list.remove(medic_socket)
                 medic_socket.close()
@@ -102,9 +105,9 @@ class Server:
 
             if msg == None:
                 print(
-                    "[Server::Medic::Warning] - Se perdio la conexion con "
-                    + medic_address
-                    + " ."
+                    "[Server::Medic::Warning] - Se perdio la conexion con ",
+                    medic_address,
+                    " .",
                 )
                 self.patient_queue.put(patient)
                 self.update_list.remove(medic_socket)
@@ -126,12 +129,12 @@ class Server:
     # Actualizacion de contador para los medicos, llamo a la funcion cada vez que alguien cambia la cola de pacientes
     # en vez de dejar un thread para ahorrar recursos.
     def medic_update(self):
-        if self.update_queue.not_empty():
+        if len(self.update_list) > 0:
             data: bytes = lmsg.Message(
                 lmsg.MessageType.COUNTER, counter=self.patient_queue.qsize()
             ).serialize()
 
-            for medic in self.update_queue:
+            for medic in self.update_list:
                 if medic.send(data) < len(data):
                     print(
                         "[Server::Medic::Error] - No se pudo actualizar el conteo de pacientes.",
@@ -142,33 +145,34 @@ class Server:
     def reception_conn(
         self, recep_socket: sock.socket, recep_address: sock.AddressInfo
     ):
-        while True:
-            received_data = recep_socket.recv(2048)
-            msg = lmsg.deserialize(received_data)
+        try:
+            while True:
+                received_data = recep_socket.recv(2048)
+                msg = lmsg.deserialize(received_data)
+                print("[Server::info] - Recived ", msg, " from ", recep_address)
+                if msg == None:
+                    print(
+                        "[Server::Reception::Warning] - Se perdio la conexion con ",
+                        recep_address,
+                        " .",
+                    )
+                    recep_socket.close()
+                    break
 
-            if msg == None:
-                print(
-                    "[Server::Reception::Warning] - Se perdio la conexion con "
-                    + recep_address
-                    + " ."
-                )
-                recep_socket.close()
-                break
-
-            if msg.msg_type == lmsg.MessageType.PATIENT:
-                data: bytes = lmsg.Message(lmsg.MessageType.GOT).serialize()
-                try:
-                    self.patient_queue.put()
-                    recep_socket.send(data)
-                    self.patient_queue.task_done()
-                    if recep_socket.send(data) < len(data):
-                        print(
-                            "[Server::Reception::Error] - No se pudo confirmar el paciente correctamente al sistema.",
-                            file=sys.stderr,
-                        )
-                except:
-                    continue
-
+                if msg.msg_type == lmsg.MessageType.PATIENT:
+                    data: bytes = lmsg.Message(msg_type=lmsg.MessageType.GOT).serialize()
+                    try:
+                        self.patient_queue.put(msg)
+                        if recep_socket.send(data) < len(data):
+                            print(
+                                "[Server::Reception::Error] - No se pudo confirmar el paciente correctamente al sistema.",
+                                file=sys.stderr,
+                            )
+                        self.patient_queue.task_done()
+                    except:
+                        continue
+        except:
+            recep_socket.close()
 
 if __name__ == "__main__":
     server = Server()
