@@ -7,6 +7,7 @@ import socket as sock
 from socket import socket
 import libs.patient as lp
 import libs.msg as lmsg
+import time
 
 TURNOS_PORT = 5000
 TURNOS_IP = "127.0.0.1"
@@ -44,6 +45,30 @@ class PatientEntryApp:
         ).serialize()
         if self.socket.send(data) < len(data):
             messagebox.showwarning(title="Error", message="Fallo el Login.")
+        else:
+            Thread(target=self.ping_server, args=(), daemon=True).start()
+
+    def ping_server(self):
+        try:
+            ping_socket = socket()
+            ping_socket.connect((TURNOS_IP, TURNOS_PORT))
+            ping_socket.setblocking(False)
+        except:
+            print("[Enrollment::Ping::Error] - Error al crear socket para ping.")
+            return
+        while True:
+            try:
+                data = ping_socket.recv(16, sock.MSG_PEEK)
+                if len(data) == 0:
+                    raise ConnectionError
+                
+            except ConnectionError:
+                self.connection_state = "Offline"
+                self.update_conn_widget()
+                break
+            except BlockingIOError:
+                continue
+        return
 
     def update_conn_widget(self):
         self.connection_label.config(text=self.connection_state)
@@ -169,47 +194,49 @@ class PatientEntryApp:
         os._exit(0)
 
     def send_data(self, patient):
-        if self.connection_state == "Online":
-            data: bytes = lmsg.Message(
-                msg_type=lmsg.MessageType.PATIENT, patient=patient
-            ).serialize()
-            try:
-                if self.socket.send(data) < len(data):
-                    print(
-                        "[Enrollment::Error] - El paciente no puedo ser ingresado en el sistema.",
-                        file=sys.stderr,
-                    )
-                    messagebox.showwarning(
-                        title="Error",
-                        message="El paciente no puedo ser ingresado en la cola.",
-                    )
+        try:
+            if self.connection_state == "Online":
+                data: bytes = lmsg.Message(
+                    msg_type=lmsg.MessageType.PATIENT, patient=patient
+                ).serialize()
+                try:
+                    if self.socket.send(data) < len(data):
+                        print(
+                            "[Enrollment::Error] - El paciente no puedo ser ingresado en el sistema.",
+                            file=sys.stderr,
+                        )
+                        messagebox.showwarning(
+                            title="Error",
+                            message="El paciente no puedo ser ingresado en la cola.",
+                        )
 
-            except:
-                self.connection_state = "Offline"
-                self.update_conn_widget()
-        else:
-            messagebox.showwarning(
-                title="Error", message="Se requiere una conexion con el servidor."
-            )
+                except:
+                    raise ConnectionResetError
+            else:
+                messagebox.showwarning(
+                    title="Error", message="Se requiere una conexion con el servidor."
+                )
 
-        server_response = self.socket.recv(2048)
-        msg = lmsg.deserialize(server_response)
+            server_response = self.socket.recv(2048)
+            msg = lmsg.deserialize(server_response)
 
-        if msg == None:
+            if msg == None:
+                raise ConnectionResetError
+                
+
+            if msg.msg_type == lmsg.MessageType.GOT:
+                Thread(
+                    target=messagebox.showinfo,
+                    kwargs={
+                        "title": "Aceptado",
+                        "message": "El paciente fue ingresado exitosamente.",
+                    },
+                )
+        except ConnectionResetError:
             print("[Enrollment::Warning] - Se perdio la conexion con el servidor.")
-            # Por ahora termino el programa, habria que implementar una funcion de intento de reconexion
             self.socket.close()
             self.connection_state = "Offline"
             self.update_conn_widget()
-
-        if msg.msg_type == lmsg.MessageType.GOT:
-            Thread(
-                target=messagebox.showinfo,
-                kwargs={
-                    "title": "Aceptado",
-                    "message": "El paciente fue ingresado exitosamente.",
-                },
-            )
 
     def enter_data(self):
         firstname = self.first_name_entry.get()

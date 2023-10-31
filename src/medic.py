@@ -1,11 +1,12 @@
 import sys
-import socket as soc
+import socket as sock
 from socket import socket
 from threading import Thread, Condition
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import libs.msg as lmsg
 from libs.theme import Theme
+import time
 
 TURNOS_IP = "127.0.0.1"
 TURNOS_PORT = 5000
@@ -21,20 +22,16 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        self.cs = socket()
         self.call_patient = Condition()
-
-        try:
-            self.cs.connect((TURNOS_IP, TURNOS_PORT))
-        except soc.error as err:
-            print(f"[Medic::Error] - {err}", file=sys.stderr)
-            self.cs = None
+        self.connection_state = "Offline"
 
         self.str_patitentTitle = tk.StringVar()
         self.str_counterLabel = tk.StringVar(value="Pacientes Pendientes: 0")
         self.draw()
 
-        if self.cs is None:
+        self.connect_server()
+
+        if self.socket is None:
             self.str_patitentTitle.set("Error!")
             self.patientDesc.insert(
                 tk.END, "No se ha podido comunicar con la recepción..."
@@ -42,18 +39,77 @@ class App(tk.Tk):
             self.nextButton["state"] = tk.DISABLED
             self.patientDesc["state"] = tk.DISABLED
         else:
-            self.cs.send(lmsg.Message(msg_type=lmsg.MessageType.LOGIN, sender=lmsg.Role.MEDIC).serialize())
             self.str_patitentTitle.set("Bienvenido!")
             self.patientDesc.insert(
                 tk.END, "Presione el boton de abajo para llamar a un paciente."
             )
 
-            Thread(target=self.get_patients, args=(), daemon=True).start()
-            Thread(target=self.wait_patient, args=(), daemon=True).start()
-
         self.bind("<Escape>", self.exit)
         self.bind("<<New Patient>>", self.update_patient)
         self.bind("<<Inform Patient>>", self.notify_patient)
+
+    def connect_server(self):
+        try:
+            self.socket = socket()
+            self.socket.connect((TURNOS_IP, TURNOS_PORT))
+            self.connection_state = "Online"
+            self.login()
+            Thread(target=self.wait_patient, args=(), daemon=True).start()
+        except sock.error as err:
+            print(f"[Enrollment::Error] - {err}", file=sys.stderr)
+            self.socket.close()
+            self.connection_state = "Offline"
+            messagebox.showerror(
+                title="Error", message="No se pudo conectar con el servidor."
+            )
+        self.update_conn_widget()
+
+    def login(self):
+        data: bytes = lmsg.Message(
+            msg_type=lmsg.MessageType.LOGIN, sender=lmsg.Role.MEDIC
+        ).serialize()
+        if self.socket.send(data) < len(data):
+            messagebox.showwarning(title="Error", message="Fallo el Login.")
+        else:
+            Thread(target=self.ping_server, args=(), daemon=True).start()
+            self.event_generate("<<New Patient>>")
+
+    def ping_server(self):
+        try:
+            ping_socket = self.socket.dup()
+        except:
+            print("[Medic::Ping::Error] - Error al crear socket para ping.")
+            return
+        while True:
+            try:
+                data = ping_socket.recv(2048, sock.MSG_PEEK)
+                if not data:
+                    raise ConnectionResetError
+                else:
+                    msg = lmsg.deserialize(data)
+                    if msg.msg_type == lmsg.MessageType.COUNTER:
+                        ping_socket.recv(2048)
+                        self.str_counterLabel.set(f"Pacientes Pendientes: {msg.counter}")
+
+            except ConnectionResetError:
+                self.connection_state = "Offline"
+                self.update_conn_widget()
+                break
+            except BlockingIOError:
+                continue
+        return
+
+    def update_conn_widget(self):
+        self.connection_label.config(text=self.connection_state)
+        if self.connection_state == "Online":
+            self.connection_label.config(background="green")
+            self.conn_info_frame.config(background="green")
+            self.button_reconnect["state"] = tk.DISABLED
+
+        else:
+            self.connection_label.config(background="red")
+            self.conn_info_frame.config(background="red")
+            self.button_reconnect["state"] = tk.ACTIVE
 
     def draw(self):
         self.geometry(f"{App.SCREEN_WIDTH}x{App.SCREEN_HEIGHT}")
@@ -66,6 +122,30 @@ class App(tk.Tk):
             self, width=App.SCREEN_WIDTH, height=App.SCREEN_HEIGHT, style="Main.TFrame"
         )
         mainFrame.pack(fill="both", expand=True)
+
+        self.conn_info_frame = tk.Frame(
+            mainFrame,
+            background="red",
+        )
+
+        self.button_reconnect = tk.Button(
+            self.conn_info_frame,
+            text="Reconectar",
+            command=self.connect_server,
+            background="#CCCCCC",
+            state=tk.DISABLED,
+        )
+        self.button_reconnect.pack(side="right", ipadx=0, ipady=0)
+
+        self.connection_label = tk.Label(
+            self.conn_info_frame,
+            text=self.connection_state,
+            anchor="w",
+            background="red",
+        )
+        self.connection_label.pack(side="left")
+
+        self.conn_info_frame.pack(anchor="nw", fill="x", expand=True)
 
         subFrame = ttk.Frame(
             mainFrame,
@@ -162,55 +242,64 @@ class App(tk.Tk):
         if self.patient is None:
             self.str_patitentTitle.set("Error!")
             self.patientDesc.insert(
-                tk.END, "No se ha podido comunicar con la recepción..."
+                tk.END, "No se ha podido comunicar con el servidor..."
             )
-            self.nextButton["state"] = tk.DISABLED
+            if self.connection_state == "Online":
+                self.nextButton["state"] = tk.ACTIVE
+            else:
+                self.nextButton["state"] = tk.DISABLED
+
             self.patientDesc["state"] = tk.DISABLED
         else:
             self.str_patitentTitle.set(f"Paciente N°{self.patient.nro}")
             self.set_patient_description()
             self.nextButton["state"] = tk.NORMAL
-            self.event_generate("<<Inform Patient>>")
 
     def get_patients(self):
-        while True:
-            rc = self.cs.recv(2048)
-            msg = lmsg.deserialize(rc)
+        try:
+            received_data = self.socket.recv(2048)
+            msg = lmsg.deserialize(received_data)
 
             if msg == None:
-                print("[Medic::Warning] - Se perdio la conexion con el sistema.")
-                break
-
+                raise ConnectionResetError
+            
+            print("[Medic::Info] - Se recibio ", msg, " del servidor.")
             if msg.msg_type == lmsg.MessageType.PATIENT:
                 self.patient = msg.patient
                 self.event_generate("<<New Patient>>")
-            elif msg.msg_type == lmsg.MessageType.COUNTER:
-                self.str_counterLabel.set(f"Pacientes Pendientes: {msg.counter}")
-            else:
-                print("[Medic::Warning] - Se recibio un MessageType invalido.")
+                self.event_generate("<<Inform Patient>>")
+                
+        except ConnectionResetError:
+            print("[Medic::Warning] - Se perdio la conexion con el sistema.")
 
     def wait_patient(self):
         while True:
             with self.call_patient:
                 self.call_patient.wait()
+            try:
                 data: bytes = lmsg.Message(lmsg.MessageType.ASK).serialize()
-                if self.cs.send(data) < len(data):
+                if self.socket.send(data) < len(data):
+                    messagebox.showwarning(title="Error", message="No se pudo pedir paciente.")
                     print(
                         "[Medic::Error] - No se pudo pedir el paciente correctamente al sistema.",
                         file=sys.stderr,
                     )
+                else:
+                    self.get_patients()
+            except ConnectionResetError:
+                return
 
     def notify_patient(self, _event):
         data: bytes = lmsg.Message(lmsg.MessageType.GOT).serialize()
-        if self.cs.send(data) < len(data):
+        if self.socket.send(data) < len(data):
             print(
                 "[Medic::Error] - No se pudo confirmar el paciente correctamente al sistema.",
                 file=sys.stderr,
             )
 
     def exit(self, _event):
-        if self.cs != None:
-            self.cs.close()
+        if self.socket != None:
+            self.socket.close()
         self.destroy()
 
 

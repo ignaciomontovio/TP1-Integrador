@@ -25,7 +25,7 @@ class Message:
         self.counter = counter
 
     def __str__(self):
-        return f"{self.msg_type.name} {self.sender} - {self.patient} - {self.counter}"
+        return f"{self.msg_type.name} - {self.patient} - {self.counter}"
 
     def serialize(self) -> bytes:
         return pickle.dumps(self)
