@@ -217,6 +217,7 @@ class App(tk.Tk):
         )
 
     def set_patient_description(self):
+        self.patientDesc.delete("1.0", tk.END)
         self.patientDesc.insert(tk.END, "Nombre: ", "bold")
         self.patientDesc.insert(tk.END, f"{self.patient.name}")
         self.patientDesc.insert(tk.END, f"\nApellido: ", "bold")
@@ -268,9 +269,13 @@ class App(tk.Tk):
                 self.patient = msg.patient
                 self.event_generate("<<New Patient>>")
                 self.event_generate("<<Inform Patient>>")
+            elif msg.msg_type == lmsg.MessageType.COUNTER:
+                self.str_counterLabel.set(f"Pacientes Pendientes: {msg.counter}")
+                self.event_generate("<<New Patient>>")
                 
         except ConnectionResetError:
             print("[Medic::Warning] - Se perdio la conexion con el sistema.")
+            self.patient = None
 
     def wait_patient(self):
         while True:
@@ -299,6 +304,7 @@ class App(tk.Tk):
 
     def exit(self, _event):
         if self.socket != None:
+            self.socket.shutdown(1)
             self.socket.close()
         self.destroy()
 

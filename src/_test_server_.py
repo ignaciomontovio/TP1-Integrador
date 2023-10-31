@@ -88,25 +88,29 @@ class Server:
                 if msg == None:
                     raise ConnectionResetError
                 print(msg)
-                if msg.msg_type == lmsg.MessageType.ASK:
-                    patient = self.patient_queue.get(block=True, timeout=None)
-                    data: bytes = lmsg.Message(
-                        msg_type=lmsg.MessageType.PATIENT, patient=patient
-                    ).serialize()
-                    if medic_socket.send(data) < len(data):
+                try:
+                    if msg.msg_type == lmsg.MessageType.ASK:
+                        patient = self.patient_queue.get(block=True, timeout=None)
+                        data: bytes = lmsg.Message(
+                            msg_type=lmsg.MessageType.PATIENT, patient=patient
+                        ).serialize()
+                        if medic_socket.send(data) < len(data):
+                            print(
+                                "[Server::Error] - El paciente no puedo ser enviado.",
+                                file=sys.stderr,
+                            )
+                            raise ConnectionAbortedError
+                    elif msg.msg_type == lmsg.MessageType.GOT:
+                        print("[Server::info] - Paciente enviado exitosamente")
+                        patient = None
+                        Thread(target=self.medic_update, args=(), daemon=True).start()
+                    else:
                         print(
-                            "[Server::Error] - El paciente no puedo ser enviado.",
-                            file=sys.stderr,
+                            "[Server::Warning] - Se recibio un MessageType invalido."
                         )
-                elif msg.msg_type == lmsg.MessageType.GOT:
-                    print("[Server::info] - Paciente enviado exitosamente")
-                    patient = None
-                    Thread(target=self.medic_update, args=(), daemon=True).start()
-                else:
-                    print(
-                        "[Server::Warning] - Se recibio un MessageType invalido."
-                    )
-                    raise ConnectionResetError
+                        raise ConnectionError
+                except ConnectionAbortedError:
+                    self.patient_queue.put(patient)
 
         except ConnectionResetError:
             print(
@@ -157,7 +161,7 @@ class Server:
                                 "[Server::Reception::Error] - No se pudo confirmar el paciente correctamente al sistema.",
                                 file=sys.stderr,
                             )
-                        Thread(self.medic_update, args=()).start()
+                        Thread(target=self.medic_update, args=(), daemon=True).start()
                     except:
                         continue
         except ConnectionResetError:

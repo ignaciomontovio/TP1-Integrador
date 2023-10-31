@@ -189,6 +189,7 @@ class PatientEntryApp:
         button_exit.grid(row=4, column=0, sticky="news", padx=20, pady=10)
 
     def finish_session(self):
+        self.socket.shutdown(1)
         self.socket.close()
         self.root.quit()
         os._exit(0)
