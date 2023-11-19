@@ -14,6 +14,7 @@ class WaitingRoomApp:
     def __init__(self, root):
         self.connect_server()
         self.process_interface(root)
+
     def connect_server(self):
         try:
             self.socket = socket()
@@ -72,10 +73,18 @@ class WaitingRoomApp:
 
                 print("[Waiting Room::Info] - Se recibio ", msg, " del servidor.")
                 if msg.msg_type == lmsg.MessageType.PATIENT:
+                    patients=listbox.get(0, tk.END)
+                    listbox.delete(0,tk.END)
                     self.patient = msg.patient
                     patient = self.patient.name
                     medic = self.patient.surname
                     listbox.insert(tk.END,self.format_string(patient)+"| "+self.format_string(medic))
+                    listbox.itemconfig(0, {'fg': '#E63946'})
+                    cont=0
+                    for p in patients:
+                        listbox.insert(tk.END,p)
+                        cont=cont+1
+                        listbox.itemconfig(cont, {'fg': 'white'})
 
             except ConnectionError:
                 self.connection_state = "Offline"
