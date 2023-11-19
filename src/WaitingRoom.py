@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox, CENTER, W, Label
 from threading import Thread
 import socket as sock
 from socket import socket
@@ -28,16 +28,28 @@ class WaitingRoomApp:
                 title="Error", message="No se pudo conectar con el servidor."
             )
 
+    def format_string(self, text):
+        long = 20
+        return text.center(long)[:long].upper()
+
     def process_interface(self, window):
         global listbox
         window.title("Sala de espera")
         window.configure(bg="#457B9D")
         window.attributes('-zoomed', True)
+
         frame = tk.Frame(window, background="#457B9D")
         frame.pack()
-        listbox = tk.Listbox(window,width=45, height=10,font=("Helvetica", 50,"bold"))
-        listbox.place(x=10,y=10)
-        listbox.pack()
+
+        title = Label(text=self.format_string("paciente") + "|" + self.format_string("consultorio"))
+        title.config(fg="#1D3557",bg="#A8DADC",width=45,height=1,font=("Monospace",50,"bold"),anchor=W)
+        title.pack(anchor=CENTER,pady=20,ipady=20)
+
+
+        listbox = tk.Listbox(window,width=45, height=9,font=("Monospace", 50,"bold"))
+        listbox.config(bg="#1D3557")
+        listbox.pack(anchor=CENTER)
+
 
     def login(self):
         data: bytes = lmsg.Message(
@@ -61,7 +73,9 @@ class WaitingRoomApp:
                 print("[Waiting Room::Info] - Se recibio ", msg, " del servidor.")
                 if msg.msg_type == lmsg.MessageType.PATIENT:
                     self.patient = msg.patient
-                    listbox.insert(tk.END,self.patient)
+                    patient = self.patient.name
+                    medic = self.patient.surname
+                    listbox.insert(tk.END,self.format_string(patient)+"| "+self.format_string(medic))
 
             except ConnectionError:
                 self.connection_state = "Offline"
