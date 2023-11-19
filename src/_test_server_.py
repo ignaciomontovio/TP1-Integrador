@@ -72,7 +72,7 @@ class Server:
                             " , tipo: WAITING_ROOM",
                         )
                         self.waiting_room_update_list.append(client_socket)
-                        #self.waiting_room_conn(client_socket, client_address)
+                        self.waiting_room_conn(client_socket, client_address)
                 else:
                     print(
                         "[Server::Login::Warning] - Se recibio un MessageType invalido."
@@ -182,37 +182,27 @@ class Server:
             )
             recep_socket.close()
 
-    # Manejo de la conexion con la/s sala/s de espera.
+    # Manejo de la conexion con la/s sala/s de espera. Al romperse el enlace se saca la recepción de la lista.
     def waiting_room_conn(
         self, waiting_room_socket: sock.socket, waiting_room_address: sock.AddressInfo
     ):
         try:
             while True:
-                received_data = waiting_room_socket.recv(2048)
-                msg = lmsg.deserialize(received_data)
-                print("[Server::info] - Recived ", msg, " from ", waiting_room_address)
-                if msg == None:
-                    raise ConnectionResetError
-
-                if msg.msg_type == lmsg.MessageType.PATIENT:
-                    data: bytes = lmsg.Message(
-                        msg_type=lmsg.MessageType.GOT
-                    ).serialize()
-                    try:
-                        self.patient_queue.put(msg.patient)
-                        if waiting_room_socket.send(data) < len(data):
-                            print(
-                                "[Server::Reception::Error] - No se pudo confirmar el paciente correctamente al sistema.",
-                                file=sys.stderr,
-                            )
-                        Thread(target=self.medic_update, args=(), daemon=True).start()
-                    except:
-                        continue
+                data = waiting_room_socket.recv(1)
+                if not data:
+                    print(
+                        "[Server::Reception::Warning] - Se perdio la conexion con ",
+                        waiting_room_address,
+                        " . Se quitará de la lista de salas de espera.",
+                    )
+                    self.waiting_room_update_list.remove(waiting_room_socket)
+                    waiting_room_socket.close()
+                    return
         except ConnectionResetError:
             print(
                 "[Server::Reception::Warning] - Se perdio la conexion con ",
                 waiting_room_address,
-                " .",
+                " . Se quitará de la lista de salas de espera.",
             )
             self.waiting_room_update_list.remove(waiting_room_socket)
             waiting_room_socket.close()

@@ -7,7 +7,6 @@ import socket as sock
 from socket import socket
 import libs.patient as lp
 import libs.msg as lmsg
-import time
 
 TURNOS_PORT = 5000
 TURNOS_IP = "127.0.0.1"

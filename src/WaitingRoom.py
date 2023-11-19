@@ -62,11 +62,9 @@ class WaitingRoomApp:
                 if msg.msg_type == lmsg.MessageType.PATIENT:
                     self.patient = msg.patient
                     listbox.insert(tk.END,self.patient)
-                    #data = ping_socket.recv(16, sock.MSG_PEEK)
 
             except ConnectionError:
                 self.connection_state = "Offline"
-                #self.update_conn_widget()
                 break
             except BlockingIOError:
                 continue
