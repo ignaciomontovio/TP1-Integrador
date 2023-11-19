@@ -2,12 +2,19 @@ import os
 import tkinter as tk
 from tkinter import *
 
+def format_string(text):
+    long = 20
+    return text.center(long)[:long].upper()
+
 def recv_msg():
     global window, listbox
     fifo = "internal_msg"
     with open(fifo, "r") as fifo:
-        datos = fifo.read()
-        listbox.insert(tk.END,datos)
+        dato = fifo.read()
+        datos = dato.split("#") #PACIENTE#MEDICO/CONSULTORIO
+        patient = datos[0]
+        medic = datos[1]
+        listbox.insert(tk.END,format_string(patient)+"| "+format_string(medic))
     window.after(1000,recv_msg)
     window.update()
 
@@ -26,12 +33,12 @@ def process_interface():
     frame = tk.Frame(window, background="#457B9D")
     frame.pack()
 
-    title = Label(text=" TURNO\t\t\t CONSULTORIO")
-    title.config(fg="#1D3557",bg="#A8DADC",width=45,height=1,font=("Helvetica",50,"bold"),anchor=W) 
+    title = Label(text=format_string("paciente")+"|"+format_string("consultorio"))
+    title.config(fg="#1D3557",bg="#A8DADC",width=45,height=1,font=("Monospace",50,"bold"),anchor=W) 
     title.pack(anchor=CENTER,pady=20,ipady=20)
     
 
-    listbox = tk.Listbox(window,width=45, height=10,font=("Helvetica", 50,"bold"))
+    listbox = tk.Listbox(window,width=45, height=9,font=("Monospace", 50,"bold"))
     listbox.config(bg="#1D3557")
     listbox.pack(anchor=CENTER)
     
