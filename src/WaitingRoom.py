@@ -21,11 +21,19 @@ def process_interface():
     window.title("Sala de espera")
     window.configure(bg="#457B9D")
     window.attributes('-zoomed', True)
+
     frame = tk.Frame(window, background="#457B9D")
     frame.pack()
+
+    title = Label(text=" TURNO\t\t\t CONSULTORIO")
+    title.config(fg="#1D3557",bg="#A8DADC",width=45,height=1,font=("Helvetica",50,"bold"),anchor=W) 
+    title.pack(anchor=CENTER,pady=20,ipady=20)
+    
+
     listbox = tk.Listbox(window,width=45, height=10,font=("Helvetica", 50,"bold"))
-    listbox.place(x=10,y=10)
-    listbox.pack()
+    listbox.config(bg="#1D3557")
+    listbox.pack(anchor=CENTER)
+    
     window.after(1000,recv_msg)
     window.mainloop()
 
