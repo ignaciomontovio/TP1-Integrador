@@ -1,5 +1,6 @@
 import os
 import tkinter as tk
+from tkinter import *
 
 def recv_msg():
     global window, listbox
