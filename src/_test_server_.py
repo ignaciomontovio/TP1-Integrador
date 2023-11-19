@@ -190,23 +190,19 @@ class Server:
             while True:
                 data = waiting_room_socket.recv(1)
                 if not data:
-                    print(
-                        "[Server::Reception::Warning] - Se perdio la conexion con ",
-                        waiting_room_address,
-                        " . Se quitará de la lista de salas de espera.",
-                    )
-                    self.waiting_room_update_list.remove(waiting_room_socket)
-                    waiting_room_socket.close()
+                    self.close_waiting_room_socket(waiting_room_address, waiting_room_socket)
                     return
         except ConnectionResetError:
-            print(
-                "[Server::Reception::Warning] - Se perdio la conexion con ",
-                waiting_room_address,
-                " . Se quitará de la lista de salas de espera.",
-            )
-            self.waiting_room_update_list.remove(waiting_room_socket)
-            waiting_room_socket.close()
+            self.close_waiting_room_socket(waiting_room_address, waiting_room_socket)
 
+    def close_waiting_room_socket(self, waiting_room_address, waiting_room_socket):
+        print(
+            "[Server::Reception::Warning] - Se perdio la conexion con ",
+            waiting_room_address,
+            " . Se quitará de la lista de salas de espera.",
+        )
+        self.waiting_room_update_list.remove(waiting_room_socket)
+        waiting_room_socket.close()
 
     def waiting_room_update(self):
         if len(self.waiting_room_update_list) > 0:
