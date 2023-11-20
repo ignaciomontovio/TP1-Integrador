@@ -76,9 +76,9 @@ class WaitingRoomApp:
                     patients=listbox.get(0, tk.END)
                     listbox.delete(0,tk.END)
                     self.patient = msg.patient
-                    patient = self.patient.name
-                    medic = self.patient.surname
-                    listbox.insert(tk.END,self.format_string(patient)+"| "+self.format_string(medic))
+                    patient = self.patient.name+" "+self.patient.surname
+                    room = self.patient.room
+                    listbox.insert(tk.END,self.format_string(patient)+"| "+self.format_string("consultorio "+room))
                     listbox.itemconfig(0, {'fg': '#E63946'})
                     cont=0
                     for p in patients:

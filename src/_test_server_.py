@@ -1,3 +1,6 @@
+import fcntl
+import multiprocessing
+import os
 import sys
 from threading import Thread
 import socket as sock
@@ -29,7 +32,6 @@ class Server:
             return
         else:
             self.server_socket.listen()
-
         # Thread(target=self.run_server, args=(), daemon=True).start()
         self.run_server()
 
@@ -99,6 +101,7 @@ class Server:
                 try:
                     if msg.msg_type == lmsg.MessageType.ASK:
                         patient = self.patient_queue.get(block=True, timeout=None)
+                        patient.room=str(msg.counter)
                         data: bytes = lmsg.Message(
                             msg_type=lmsg.MessageType.PATIENT, patient=patient
                         ).serialize()
@@ -131,6 +134,8 @@ class Server:
             self.medic_update_list.remove(medic_socket)
             medic_socket.close()
         return
+
+   
 
     # Actualizacion de contador para los medicos, llamo a la funcion cada vez que alguien cambia la cola de pacientes
     # en vez de dejar un thread para ahorrar recursos.
