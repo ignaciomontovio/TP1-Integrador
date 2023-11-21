@@ -19,6 +19,7 @@ class Patient:
         self.name: str = name
         self.surname: str = surname
         self.symptoms: str = symptoms
+        self.room: str = ""
 
     def __str__(self):
         return f"{self.name} {self.surname} - {self.dni}"

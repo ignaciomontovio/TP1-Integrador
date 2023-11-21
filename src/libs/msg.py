@@ -13,6 +13,7 @@ class MessageType(Enum):
 class Role(Enum):
     MEDIC = 1
     RECEPTION = 2
+    WAITINGROOM = 3
 
 
 class Message:

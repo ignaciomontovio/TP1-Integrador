@@ -1,9 +1,11 @@
+import fcntl
+import multiprocessing
+import os
 import sys
 from threading import Thread
 import socket as sock
 from socket import socket
 from queue import SimpleQueue
-import libs.patient as lp
 import libs.msg as lmsg
 
 
@@ -16,8 +18,9 @@ class Server:
         self.server_socket = socket()
         self.patient_queue = SimpleQueue()
         # Lista con todos los medicos para actualizar contador
-        self.update_list = list()
-
+        self.medic_update_list = list()
+        # Lista con todas las pantallas para actualizar los turnos
+        self.waiting_room_update_list = list()
         try:
             self.server_socket.bind((TURNOS_IP, TURNOS_PORT))
         except sock.error as err:
@@ -29,7 +32,6 @@ class Server:
             return
         else:
             self.server_socket.listen()
-
         # Thread(target=self.run_server, args=(), daemon=True).start()
         self.run_server()
 
@@ -56,15 +58,23 @@ class Server:
                             client_address,
                             " , tipo: MEDICO",
                         )
-                        self.update_list.append(client_socket)
+                        self.medic_update_list.append(client_socket)
                         self.medic_conn(client_socket, client_address)
-                    else:
+                    if msg.sender == lmsg.Role.RECEPTION:
                         print(
                             f"[Server::info] - Nueva conexion desde ",
                             client_address,
                             " , tipo: RECEPCION",
                         )
                         self.reception_conn(client_socket, client_address)
+                    if msg.sender == lmsg.Role.WAITINGROOM:
+                        print(
+                            f"[Server::info] - Nueva conexion desde ",
+                            client_address,
+                            " , tipo: WAITING_ROOM",
+                        )
+                        self.waiting_room_update_list.append(client_socket)
+                        self.waiting_room_conn(client_socket, client_address)
                 else:
                     print(
                         "[Server::Login::Warning] - Se recibio un MessageType invalido."
@@ -91,6 +101,7 @@ class Server:
                 try:
                     if msg.msg_type == lmsg.MessageType.ASK:
                         patient = self.patient_queue.get(block=True, timeout=None)
+                        patient.room=str(msg.counter)
                         data: bytes = lmsg.Message(
                             msg_type=lmsg.MessageType.PATIENT, patient=patient
                         ).serialize()
@@ -100,6 +111,8 @@ class Server:
                                 file=sys.stderr,
                             )
                             raise ConnectionAbortedError
+                        for waiting_room in self.waiting_room_update_list:
+                            waiting_room.send(data)
                     elif msg.msg_type == lmsg.MessageType.GOT:
                         print("[Server::info] - Paciente enviado exitosamente")
                         patient = None
@@ -118,19 +131,21 @@ class Server:
                 medic_address,
                 " .",
             )
-            self.update_list.remove(medic_socket)
+            self.medic_update_list.remove(medic_socket)
             medic_socket.close()
         return
+
+   
 
     # Actualizacion de contador para los medicos, llamo a la funcion cada vez que alguien cambia la cola de pacientes
     # en vez de dejar un thread para ahorrar recursos.
     def medic_update(self):
-        if len(self.update_list) > 0:
+        if len(self.medic_update_list) > 0:
             data: bytes = lmsg.Message(
                 lmsg.MessageType.COUNTER, counter=self.patient_queue.qsize()
             ).serialize()
 
-            for medic in self.update_list:
+            for medic in self.medic_update_list:
                 if medic.send(data) < len(data):
                     print(
                         "[Server::Medic::Error] - No se pudo actualizar el conteo de pacientes.",
@@ -172,6 +187,40 @@ class Server:
             )
             recep_socket.close()
 
+    # Manejo de la conexion con la/s sala/s de espera. Al romperse el enlace se saca la recepción de la lista.
+    def waiting_room_conn(
+        self, waiting_room_socket: sock.socket, waiting_room_address: sock.AddressInfo
+    ):
+        try:
+            while True:
+                data = waiting_room_socket.recv(1)
+                if not data:
+                    self.close_waiting_room_socket(waiting_room_address, waiting_room_socket)
+                    return
+        except ConnectionResetError:
+            self.close_waiting_room_socket(waiting_room_address, waiting_room_socket)
 
+    def close_waiting_room_socket(self, waiting_room_address, waiting_room_socket):
+        print(
+            "[Server::Reception::Warning] - Se perdio la conexion con ",
+            waiting_room_address,
+            " . Se quitará de la lista de salas de espera.",
+        )
+        self.waiting_room_update_list.remove(waiting_room_socket)
+        waiting_room_socket.close()
+
+    def waiting_room_update(self):
+        if len(self.waiting_room_update_list) > 0:
+            data: bytes = lmsg.Message(
+                lmsg.MessageType.COUNTER, counter=self.patient_queue.qsize()
+            ).serialize()
+
+            for medic in self.medic_update_list:
+                if medic.send(data) < len(data):
+                    print(
+                        "[Server::Medic::Error] - No se pudo actualizar el conteo de pacientes.",
+                        file=sys.stderr,
+                    )
+        return
 if __name__ == "__main__":
     server = Server()

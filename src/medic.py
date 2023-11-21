@@ -1,3 +1,5 @@
+import fcntl
+import os
 import sys
 import socket as sock
 from socket import socket
@@ -19,7 +21,7 @@ class App(tk.Tk):
     APP_NAME = "Medico"
     FONT_NAME = "TkDefaultFont"
 
-    def __init__(self):
+    def __init__(self,room):
         super().__init__()
 
         self.call_patient = Condition()
@@ -28,6 +30,8 @@ class App(tk.Tk):
         self.str_patitentTitle = tk.StringVar()
         self.str_counterLabel = tk.StringVar(value="Pacientes Pendientes: 0")
         self.draw()
+
+        self.room=room
 
         self.connect_server()
 
@@ -43,6 +47,9 @@ class App(tk.Tk):
             self.patientDesc.insert(
                 tk.END, "Presione el boton de abajo para llamar a un paciente."
             )
+
+        
+        #print("consultorio: "+str(self.numer_room))
 
         self.bind("<Escape>", self.exit)
         self.bind("<<New Patient>>", self.update_patient)
@@ -282,7 +289,7 @@ class App(tk.Tk):
             with self.call_patient:
                 self.call_patient.wait()
             try:
-                data: bytes = lmsg.Message(lmsg.MessageType.ASK).serialize()
+                data: bytes = lmsg.Message(msg_type = lmsg.MessageType.ASK,counter=self.room).serialize()
                 if self.socket.send(data) < len(data):
                     messagebox.showwarning(title="Error", message="No se pudo pedir paciente.")
                     print(
@@ -310,5 +317,6 @@ class App(tk.Tk):
 
 
 if __name__ == "__main__":
-    app = App()
+    room = sys.argv[1:].pop()
+    app = App(room)
     app.mainloop()
