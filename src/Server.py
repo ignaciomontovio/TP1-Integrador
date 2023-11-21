@@ -1,6 +1,3 @@
-import fcntl
-import multiprocessing
-import os
 import sys
 from threading import Thread
 import socket as sock
@@ -101,7 +98,7 @@ class Server:
                 try:
                     if msg.msg_type == lmsg.MessageType.ASK:
                         patient = self.patient_queue.get(block=True, timeout=None)
-                        patient.room=str(msg.counter)
+                        patient.room = str(msg.counter)
                         data: bytes = lmsg.Message(
                             msg_type=lmsg.MessageType.PATIENT, patient=patient
                         ).serialize()
@@ -118,9 +115,7 @@ class Server:
                         patient = None
                         Thread(target=self.medic_update, args=(), daemon=True).start()
                     else:
-                        print(
-                            "[Server::Warning] - Se recibio un MessageType invalido."
-                        )
+                        print("[Server::Warning] - Se recibio un MessageType invalido.")
                         raise ConnectionError
                 except ConnectionAbortedError:
                     self.patient_queue.put(patient)
@@ -134,8 +129,6 @@ class Server:
             self.medic_update_list.remove(medic_socket)
             medic_socket.close()
         return
-
-   
 
     # Actualizacion de contador para los medicos, llamo a la funcion cada vez que alguien cambia la cola de pacientes
     # en vez de dejar un thread para ahorrar recursos.
@@ -195,7 +188,9 @@ class Server:
             while True:
                 data = waiting_room_socket.recv(1)
                 if not data:
-                    self.close_waiting_room_socket(waiting_room_address, waiting_room_socket)
+                    self.close_waiting_room_socket(
+                        waiting_room_address, waiting_room_socket
+                    )
                     return
         except ConnectionResetError:
             self.close_waiting_room_socket(waiting_room_address, waiting_room_socket)
@@ -222,5 +217,7 @@ class Server:
                         file=sys.stderr,
                     )
         return
+
+
 if __name__ == "__main__":
     server = Server()

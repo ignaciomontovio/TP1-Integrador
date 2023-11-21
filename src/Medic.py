@@ -1,5 +1,3 @@
-import fcntl
-import os
 import sys
 import socket as sock
 from socket import socket
@@ -21,7 +19,7 @@ class App(tk.Tk):
     APP_NAME = "Medico"
     FONT_NAME = "TkDefaultFont"
 
-    def __init__(self,room):
+    def __init__(self, room):
         super().__init__()
 
         self.call_patient = Condition()
@@ -31,7 +29,7 @@ class App(tk.Tk):
         self.str_counterLabel = tk.StringVar(value="Pacientes Pendientes: 0")
         self.draw()
 
-        self.room=room
+        self.room = room
 
         self.connect_server()
 
@@ -48,8 +46,7 @@ class App(tk.Tk):
                 tk.END, "Presione el boton de abajo para llamar a un paciente."
             )
 
-        
-        #print("consultorio: "+str(self.numer_room))
+        # print("consultorio: "+str(self.numer_room))
 
         self.bind("<Escape>", self.exit)
         self.bind("<<New Patient>>", self.update_patient)
@@ -96,7 +93,9 @@ class App(tk.Tk):
                     msg = lmsg.deserialize(data)
                     if msg.msg_type == lmsg.MessageType.COUNTER:
                         ping_socket.recv(2048)
-                        self.str_counterLabel.set(f"Pacientes Pendientes: {msg.counter}")
+                        self.str_counterLabel.set(
+                            f"Pacientes Pendientes: {msg.counter}"
+                        )
 
             except ConnectionResetError:
                 self.connection_state = "Offline"
@@ -270,7 +269,7 @@ class App(tk.Tk):
 
             if msg == None:
                 raise ConnectionResetError
-            
+
             print("[Medic::Info] - Se recibio ", msg, " del servidor.")
             if msg.msg_type == lmsg.MessageType.PATIENT:
                 self.patient = msg.patient
@@ -279,7 +278,7 @@ class App(tk.Tk):
             elif msg.msg_type == lmsg.MessageType.COUNTER:
                 self.str_counterLabel.set(f"Pacientes Pendientes: {msg.counter}")
                 self.event_generate("<<New Patient>>")
-                
+
         except ConnectionResetError:
             print("[Medic::Warning] - Se perdio la conexion con el sistema.")
             self.patient = None
@@ -289,9 +288,13 @@ class App(tk.Tk):
             with self.call_patient:
                 self.call_patient.wait()
             try:
-                data: bytes = lmsg.Message(msg_type = lmsg.MessageType.ASK,counter=self.room).serialize()
+                data: bytes = lmsg.Message(
+                    msg_type=lmsg.MessageType.ASK, counter=self.room
+                ).serialize()
                 if self.socket.send(data) < len(data):
-                    messagebox.showwarning(title="Error", message="No se pudo pedir paciente.")
+                    messagebox.showwarning(
+                        title="Error", message="No se pudo pedir paciente."
+                    )
                     print(
                         "[Medic::Error] - No se pudo pedir el paciente correctamente al sistema.",
                         file=sys.stderr,

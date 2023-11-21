@@ -5,10 +5,16 @@ import libs.patient as lp
 
 class MessageType(Enum):
     PATIENT = 1
+    """ Envia un paciente """
     COUNTER = 2
+    """ Pide la cantidad de pacientes pendientes """
     ASK = 3
+    """ Pide el proximo paciente """
     GOT = 4
+    """ Informa que recibio el paciente """
     LOGIN = 5
+    """ Pide conectarse al Servidor """
+
 
 class Role(Enum):
     MEDIC = 1
@@ -18,7 +24,11 @@ class Role(Enum):
 
 class Message:
     def __init__(
-        self, msg_type: MessageType, sender: Role = None, patient: lp.Patient = None, counter: int = 0
+        self,
+        msg_type: MessageType,
+        sender: Role = None,
+        patient: lp.Patient = None,
+        counter: int = 0,
     ):
         self.msg_type = msg_type
         self.sender = sender

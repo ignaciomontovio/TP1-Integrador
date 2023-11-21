@@ -60,7 +60,7 @@ class PatientEntryApp:
                 data = ping_socket.recv(16, sock.MSG_PEEK)
                 if len(data) == 0:
                     raise ConnectionError
-                
+
             except ConnectionError:
                 self.connection_state = "Offline"
                 self.update_conn_widget()
@@ -75,7 +75,6 @@ class PatientEntryApp:
             self.connection_label.config(background="green")
             self.conn_info_frame.config(background="green")
             self.button_reconnect["state"] = tk.DISABLED
-
         else:
             self.connection_label.config(background="red")
             self.conn_info_frame.config(background="red")
@@ -222,7 +221,6 @@ class PatientEntryApp:
 
             if msg == None:
                 raise ConnectionResetError
-                
 
             if msg.msg_type == lmsg.MessageType.GOT:
                 Thread(
