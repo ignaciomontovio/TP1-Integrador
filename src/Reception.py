@@ -239,7 +239,6 @@ class PatientEntryApp:
     def enter_data(self):
         firstname = self.first_name_entry.get()
         lastname = self.last_name_entry.get()
-
         if firstname and lastname:
             self.patient_counter += 1
             patient = lp.Patient(
@@ -252,11 +251,19 @@ class PatientEntryApp:
                 symptoms=self.symptoms_entry.get(),
             )
             self.send_data(patient)
+            self.clear_data()
         else:
             messagebox.showwarning(
                 title="Error", message="Se requieren nombre y apellido."
             )
-
+        
+    def clear_data(self):
+        self.first_name_entry.delete(0,tk.END)
+        self.last_name_entry.delete(0,tk.END)
+        self.dni_entry.delete(0,tk.END)
+        self.age_spinbox.delete(0,tk.END)
+        self.sex_combobox.delete(0,tk.END)
+        self.symptoms_entry.delete(0,tk.END)
 
 if __name__ == "__main__":
     root = tk.Tk()
