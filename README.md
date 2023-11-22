@@ -29,7 +29,6 @@ Al ser un sistema con tres procesos **(recepción, médico y pantalla de turnos)
 
 <br>
 <br>
-<br>
 
 <p align="center">
     <img height=600 src="./docs/interfaz_recepcion.png" alt="interfaz recepción">
@@ -38,9 +37,8 @@ Al ser un sistema con tres procesos **(recepción, médico y pantalla de turnos)
 
 <br>
 <br>
-<br>
 
 <p align="center">
-    <img height=600 src="./docs/interfaz_sala_espera.jpg" alt="interfaz sala de espera">
+    <img height=600 src="./docs/interfaz_sala_espera.png" alt="interfaz sala de espera">
     <h3 align="center"><b><i>Interfaz Sala de Espera</i></b></h3>
 </p>
